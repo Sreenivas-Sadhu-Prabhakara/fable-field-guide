@@ -1,6 +1,6 @@
 {
-  "hub": "Kriya Model Lab",
-  "tagline": "A re-runnable evaluation harness that decides which model + effort Kriya should use — with the runs to prove it.",
+  "hub": "Claude Experimentation Guide",
+  "tagline": "A running lab notebook of Claude experiments — model head-to-heads, effort sweeps, and the routing decisions they produce. Every number here comes from a measured run, not a guess.",
   "updated": "2026-07-01",
   "routing": "routing/routing.json",
   "items": [

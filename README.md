@@ -8,6 +8,19 @@ Built for someone who wants to *actually use* Fable, not just read marketing abo
 
 ---
 
+## Also in this repo — the Sonnet 5 vs Opus 4.8 Kriya lab
+
+An Apple **keynote-dark** presentation comparing **Claude Sonnet 5** (`claude-sonnet-5`)
+and **Claude Opus 4.8** (`claude-opus-4-8`) on a controlled **Apolaki** build run under
+the **Kriya** SDLC methodology. It's grounded in *real* headless runs (the served model
+was verified from Claude Code's billing telemetry, not the model's self-report); the
+generated code was discarded and only the measurements remain.
+
+- **Live:** [`/sonnet5-vs-opus48/`](sonnet5-vs-opus48/) → <https://sreenivas-sadhu-prabhakara.github.io/fable-field-guide/sonnet5-vs-opus48/>
+- Headline finding: cheaper *per token* ≠ cheaper *per task* — at matched effort Sonnet 5 emitted **1.56× more output**, so it was only ~5% cheaper at standard pricing (37% under intro pricing).
+
+---
+
 ## What's inside
 
 | Path | What it is |

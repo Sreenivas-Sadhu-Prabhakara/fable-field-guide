@@ -1,0 +1,44 @@
+You are the build agent in an agentic SDLC pipeline, working a brownfield gym-SaaS (Express + TypeScript + Postgres backend; two Flutter apps + a shared Dart package). A production bug: in the member app, every booking card renders with a BLANK date, blank trainer, and blank branch — even though bookings exist and are correct in the database. Web and API return 200; nothing errors.
+
+Here is the relevant client model and the server handler. Diagnose the root cause, then implement the MINIMAL fix. State exactly which file(s) change and why. Do not rebuild the app, do not change the client model's public shape, and do NOT weaken multi-tenant isolation or the per-user scoping.
+
+--- burnzone-shared/lib/models.dart (Booking model, excerpt) ---
+
+factory Booking.fromJson(Map<String, dynamic> json) => Booking(
+  id: json['id'] as String,
+  userId: json['user_id'] as String,
+  trainerId: json['trainer_id'] as String?,
+  branchId: json['branch_id'] as String?,
+  slotId: json['slot_id'] as String?,
+  status: json['status'] as String? ?? 'booked',
+  // These three are what the UI actually displays:
+  startDateTime: json['start_datetime'] != null ? DateTime.parse(json['start_datetime'] as String) : null,
+  trainerName: json['trainer_name'] as String?,
+  branchName:  json['branch_name'] as String?,
+);
+
+// The booking card:  Text(b.startDateTime == null ? '' : fmt(b.startDateTime));  Text(b.trainerName ?? '');  Text(b.branchName ?? '');
+
+--- src/db/bookings.ts (excerpt) ---
+
+export async function getUserBookings(userId: string, tenantId: string, limit = 50, offset = 0): Promise<{ bookings: Booking[]; total: number }> {
+  const result = await pool.query(
+    `SELECT * FROM bookings
+     WHERE user_id = $1 AND tenant_id = $2
+     ORDER BY created_at DESC
+     LIMIT $3 OFFSET $4`,
+    [userId, tenantId, limit, offset]
+  );
+  const countResult = await pool.query(`SELECT COUNT(*) FROM bookings WHERE user_id = $1 AND tenant_id = $2`, [userId, tenantId]);
+  return { bookings: result.rows, total: Number(countResult.rows[0].count) };
+}
+
+// GET /bookings/me calls getUserBookings(req.userId, req.tenantId) and returns { bookings, total } directly as JSON.
+
+--- schema (relevant tables) ---
+bookings(id, tenant_id, user_id, trainer_id, branch_id, slot_id, status, created_at)   -- trainer_id/branch_id/slot_id nullable
+booking_slots(id, tenant_id, start_datetime, ...)
+users(id, tenant_id, full_name, ...)          -- trainers are users
+branches(id, tenant_id, name, ...)
+
+Deliver the corrected SQL/handler. Explain why a server-side fix is preferred over an app rebuild here, and call out any edge case (nullable joins, tenant scoping, pagination count) your fix must preserve.

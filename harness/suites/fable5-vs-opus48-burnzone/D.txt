@@ -1,0 +1,35 @@
+You are the independent gate-verifier in an agentic SDLC pipeline (separation of duties: a DIFFERENT agent wrote this code; your job is to try to break it, not to be agreeable). A build agent claims it has fixed a privilege-escalation hole (CRIT-2) in a multi-tenant gym-SaaS.
+
+Original vulnerability: PATCH /auth/:id/role is guarded by requireRole('Branch Admin','Super Admin'). A Branch Admin could therefore PATCH any user — including themselves — to Super Admin: a one-call tenant takeover. Intended policy: Branch Admins manage members and trainers only; ONLY a Super Admin may grant, change, or remove an admin-level role (Branch Admin or Super Admin). authMiddleware sets req.userId, req.tenantId, and req.role from the verified JWT.
+
+Here is the proposed fix. Decide: PASS or VETO. If VETO, enumerate every defect (what an attacker still does, and the corrected code). Be adversarial — assume the fix is wrong until you have convinced yourself otherwise.
+
+```ts
+router.patch('/:id/role', authMiddleware, requireRole('Branch Admin', 'Super Admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role: roleName } = req.body;
+    if (!validateRequired(roleName)) return res.status(400).json({ error: 'Role is required' });
+
+    const roleResult = await pool.query('SELECT id FROM roles WHERE tenant_id = $1 AND name = $2', [req.tenantId, roleName]);
+    if (roleResult.rows.length === 0) return res.status(400).json({ error: 'Invalid role' });
+
+    // CRIT-2 fix: only a Super Admin may assign an admin-level role.
+    const ELEVATED_ROLES = ['Branch Admin', 'Super Admin'];
+    if (ELEVATED_ROLES.includes(roleName) && req.role !== 'Super Admin') {
+      return res.status(403).json({ error: 'Only a Super Admin may grant admin-level roles' });
+    }
+
+    const updated = await updateUser(id, req.tenantId, { role_id: roleResult.rows[0].id });
+    if (!updated) return res.status(404).json({ error: 'User not found' });
+
+    await pool.query('INSERT INTO audit_logs (...) VALUES (...)',
+      [req.tenantId, req.userId, 'ROLE_CHANGED', 'User', id, JSON.stringify({ newRole: roleName })]);
+    res.json({ message: 'Role updated successfully', user: updated });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update role' });
+  }
+});
+```
+
+Give your verdict (PASS / VETO) first, then the findings ranked most-severe first, each with the concrete attack and the fix.

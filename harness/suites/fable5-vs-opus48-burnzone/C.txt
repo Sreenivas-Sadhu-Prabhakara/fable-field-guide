@@ -1,0 +1,17 @@
+You are the architect agent in an agentic SDLC pipeline. A brownfield gym-SaaS backend (Express + TypeScript + Postgres; JWT + RBAC; ~712 live members across one tenant, deployed on managed Cloud Run + Cloud SQL) has just finished a current-state capture. Findings:
+
+- The backend exposes 186 route handlers but only ~47 are actually wired to a client. ~140 handlers are "dark": challenges, marketplace, wearables, ai-nutrition, behavior-tracking, subscriptions, playlists, admin-calendar, availability, and an external-integrations module. Nobody knows which are half-built, which are dead, and which are quietly reachable.
+- Two CRITICAL live auth holes were already found and fixed on a branch (an anonymous OAuth callback that minted real JWTs; a role-escalation IDOR). They have NOT been deployed.
+- There is a Dockerized characterization test net (Postgres 15 + backend) that is green but NOT yet frozen, plus a small live read-only smoke suite.
+- The team is one part-time engineer using an agentic pipeline. Test coverage on the dark surface is essentially zero.
+
+Produce the Stage-0 plan to bring this system under control safely, WITHOUT a rewrite and WITHOUT taking the live service down. Your plan must cover, concretely:
+
+1. Triage method for the ~140 dark handlers — how you classify each into finish / prune / defer-to-backoffice, and the evidence you use (route-reachability, client grep, auth posture, data writes). Give the decision rule, not just categories.
+2. The regression-safety spine: how the characterization net gets frozen and what invariants it must pin BEFORE any behavior changes; how you avoid silently changing frozen behavior (who may edit the net vs who writes code — separation of duties).
+3. A strangler sequence of small, independently shippable, flag-gated slices — ordered, with the guardrail that runs after each (which tests, which fitness function). Include how each slice is rolled back.
+4. NFRs shifted left: the specific non-functional targets (authz coverage, cross-tenant isolation, latency budget, secret hygiene, audit-logging) you assert as gates, each tied to a check.
+5. A traceability approach linking finding -> requirement -> slice -> test -> deploy, and the human approval gates.
+6. The top 3 risks in THIS plan and how you de-risk each.
+
+Be specific and prescriptive — this plan will be executed by agents with human gates. Prefer concrete rules, thresholds, and check names over general principles.

@@ -22,3 +22,8 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# Lab raw outputs (models generated code/answers) — never commit; only distilled results.json
+harness/out/
+# Author grading reference — keep local to avoid contaminating re-runs
+harness/suites/**/ANSWER-KEYS.md

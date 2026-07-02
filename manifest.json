@@ -1,9 +1,26 @@
 {
   "hub": "Claude Experimentation Guide",
   "tagline": "A running lab notebook of Claude experiments — model head-to-heads, effort sweeps, and the routing decisions they produce. Every number here comes from a measured run, not a guess.",
-  "updated": "2026-07-01",
+  "updated": "2026-07-02",
   "routing": "routing/routing.json",
   "items": [
+    {
+      "id": "fable5-vs-opus48-burnzone",
+      "kind": "lab",
+      "title": "Fable 5 vs Opus 4.8",
+      "subtitle": "building BurnZone via Kriya",
+      "path": "fable5-vs-opus48-burnzone/",
+      "results": "fable5-vs-opus48-burnzone/results.json",
+      "date": "2026-07-02",
+      "effort": "default",
+      "models": ["claude-fable-5", "claude-opus-4-8"],
+      "card_stats": [
+        { "n": "1.96×", "k": "Fable cost (B+C)" },
+        { "n": "0.83×", "k": "Fable tokens vs Opus" },
+        { "n": "2 / 4", "k": "tasks fell back to Opus" }
+      ],
+      "blurb": "Is the most capable model worth 2× to build a real brownfield? On the two build/design tasks it ran, Fable 5 tied Opus 4.8 at ~2× the cost — and on both security tasks its classifiers declined and Claude Code silently served Opus instead."
+    },
     {
       "id": "sonnet5-vs-opus48-ultrathink",
       "kind": "lab",

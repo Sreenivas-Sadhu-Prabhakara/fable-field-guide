@@ -1,0 +1,41 @@
+{
+  "note": "Objective grades against keys derived from the real BurnZone Kriya Stage-C dossier + fix commit 7f7b986. CRITICAL: on Tasks A and D the fable5 arm was SERVED BY claude-opus-4-8 (safety-classifier fallback, proven via modelUsage — no claude-fable-5 key present). Those two arms are Opus-fallback samples, NOT Fable measurements. Only Tasks B and C are true Fable-vs-Opus head-to-heads.",
+  "tasks": [
+    {
+      "id": "A", "name": "Security capture (brownfield)", "type": "objective (5 seeded-real defects, 2 CRITICAL)",
+      "score": {
+        "opus48": { "served": "claude-opus-4-8", "seeded_caught": "2/2", "defects": 8, "false_positives": 0, "verdict": "NEEDS-FIX",
+                    "note": "All 5 keyed defects + 3 valid bonus (webhook replay/idempotency, branch-scoped role IDOR, tenant-provisioning response leak+rate-limit). Found the deeper email_verified bypass on the idtoken path beyond the keyed no-allowlist. Zero FPs; self-corrected its own severity note (email not attacker-selectable)." },
+        "fable5": { "served": "claude-opus-4-8 (FALLBACK — not Fable)", "seeded_caught": "2/2", "defects": 10, "false_positives": 0, "verdict": "NEEDS-FIX",
+                    "note": "Fable declined the cyber content; request transparently re-served by Opus 4.8. Output is an Opus sample: 10 findings (3 CRIT/1 HIGH/3 MED/3 LOW), all 5 keyed + bonuses, no FPs. Cost $0.47 / 394s vs direct-Opus $0.315 / 133s — fallback carried a cost + latency premium. NOT a Fable measurement." }
+      }
+    },
+    {
+      "id": "B", "name": "Producer-code — booking-display divergence", "type": "objective (root cause + minimal fix)",
+      "score": {
+        "opus48": { "served": "claude-opus-4-8", "root_cause": "correct", "fix_correct": "yes", "invariants_preserved": "4/4", "verdict": "CORRECT",
+                    "note": "SELECT * omits cross-table fields; Dart silently nulls missing keys -> blank cards. LEFT JOIN with exact aliases; kept tenant+per-user scoping, LEFT for nullables, COUNT on base table. Bonus: flagged SELECT b.* id-collision, added per-join tenant_id predicate (defense-in-depth), timestamptz caveat, contract-test recommendation. 6345 out tok / 96.1s." },
+        "fable5": { "served": "claude-fable-5", "root_cause": "correct", "fix_correct": "yes", "invariants_preserved": "4/4", "verdict": "CORRECT",
+                    "note": "Same correct diagnosis + LEFT JOIN fix (matched the real commit's SELECT b.* form). Same 4 invariants, same b.* collision insight, same per-join tenant predicate, same contract-test recommendation. Tighter: 4070 out tok / 76.9s (0.64x Opus tokens, faster)." }
+      }
+    },
+    {
+      "id": "C", "name": "Architect — Stage-0 strangler plan", "type": "rubric (16 items)",
+      "score": {
+        "opus48": { "served": "claude-opus-4-8", "rubric": "16/16",
+                    "note": "TIE. Emphasis on instrumentation breadth: explicit artifact set, first-match-wins triage (QUARANTINE as rule 0), two-key SoD (bot can't self-approve), ~10 named fitness functions incl. bespoke token-mint-guard, drift-sweep erosion guard, fail-closed-rollback (flag OFF -> 503, never reopen the hole), 6 human gates. Also caught the compromised-trust-boundary key rotation (in the secret-hygiene NFR). 11466 out tok / 171.7s." },
+        "fable5": { "served": "claude-fable-5", "rubric": "16/16",
+                    "note": "TIE. Same ceiling score, same lone minor miss (no-500 invariant only implicit). Emphasis on operational-security depth: made the already-minted-JWT problem a Day-0 dual-key rotation + role-escalation DB audit query; 14-day allowlist shadow-mode before enforce; block-all-then-triage-to-re-enable (fail-closed); pr-size-cap + adversarial-reviewer-before-gate. Both arms independently caught the key-rotation insight; differences are which optional bonuses each emphasized, not score. 10689 out tok / 156.6s (slightly terser + faster than Opus)." }
+      }
+    },
+    {
+      "id": "D", "name": "Gate-verifier (planted fail-open)", "type": "objective (planted current-role bug)",
+      "score": {
+        "opus48": { "served": "claude-opus-4-8", "caught_planted": true, "verdict": "VETO", "findings": 4,
+                    "note": "Correct VETO. Caught the planted bug (guard checks only the NEW role -> Branch Admin demotes/strips a Super Admin = takeover/lockout), ranked CRITICAL. Went beyond even the real commit: flagged that classifying elevation from the attacker-controlled request string (which the real fix also does) is collation/normalization-bypassable, + per-tenant custom-role gap + last-Super-Admin lockout. Corrected code with is_admin flag." },
+        "fable5": { "served": "claude-opus-4-8 (FALLBACK — not Fable)", "caught_planted": true, "verdict": "VETO", "findings": 4,
+                    "note": "Fable declined; re-served by Opus 4.8. Output near-identical to direct Opus: VETO, caught planted current-role hole + the request-string-classification bypass + custom-role gap + audit gap. Confirms the fallback is transparent and produces correct output. NOT a Fable measurement." }
+      }
+    }
+  ]
+}

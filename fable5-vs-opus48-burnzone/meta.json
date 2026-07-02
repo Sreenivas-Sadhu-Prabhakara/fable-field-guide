@@ -1,0 +1,9 @@
+{
+  "id": "fable5-vs-opus48-burnzone",
+  "title": "Fable 5 vs Opus 4.8 — building BurnZone via Kriya",
+  "date": "2026-07-02",
+  "effort": "default (Claude Code default, held equal on both arms)",
+  "arms": { "opus48": "claude-opus-4-8", "fable5": "claude-fable-5" },
+  "pricing_note": "Opus 4.8 $5/$25 per MTok; Fable 5 $10/$50 per MTok (2x Opus per-token, no intro discount). Costs normalized to official published rates from Claude Code modelUsage telemetry.",
+  "headline": "On four real Kriya-role tasks over the production BurnZone brownfield, Fable 5 and Opus 4.8 caught the same seeded-critical defects; Fable found more of the deeper/unseeded ones but cost ~2.6-3x per task at matched effort."
+}

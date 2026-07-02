@@ -1,0 +1,103 @@
+You are the security-capture agent in an agentic SDLC pipeline (producer role: find defects; a separate critic will verify). This is a BROWNFIELD multi-tenant gym-SaaS backend (Express + TypeScript + Postgres, JWT + RBAC with roles User / Trainer / Branch Admin / Super Admin) that already runs in production over ~712 real member accounts. Auditors care about auth bypass, privilege escalation, cross-tenant leakage, and unauthenticated mutation.
+
+Review the code below. Enumerate EVERY security or correctness defect you find. For each: give a short title, the severity (CRITICAL / HIGH / MEDIUM / LOW), the exact vulnerability (what an attacker does and what they gain), and the minimal fix. Do not redesign the system; report and fix in place. Rank most-severe first.
+
+--- src/routes/auth.ts (excerpts) ---
+
+// Role update. authMiddleware sets req.userId, req.tenantId, req.role from the verified JWT.
+router.patch('/:id/role', authMiddleware, requireRole('Branch Admin', 'Super Admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role: roleName } = req.body;
+    if (!validateRequired(roleName)) return res.status(400).json({ error: 'Role is required' });
+    const roleResult = await pool.query('SELECT id FROM roles WHERE tenant_id = $1 AND name = $2', [req.tenantId, roleName]);
+    if (roleResult.rows.length === 0) return res.status(400).json({ error: 'Invalid role' });
+    const updated = await updateUser(id, req.tenantId, { role_id: roleResult.rows[0].id });
+    if (!updated) return res.status(404).json({ error: 'User not found' });
+    await pool.query('INSERT INTO audit_logs (...) VALUES (...)', [req.tenantId, req.userId, 'ROLE_CHANGED', 'User', id, JSON.stringify({ newRole: roleName })]);
+    res.json({ message: 'Role updated successfully', user: updated });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update role' });
+  }
+});
+
+// Server-side Google OAuth callback (there is a SEPARATE, verified POST /oauth/google/idtoken path the mobile/web clients actually use).
+router.post('/oauth/google/callback', async (req, res) => {
+  try {
+    const { code, state, tenantId } = req.body;
+    if (!validateOAuthState(state, tenantId)) return res.status(400).json({ error: 'Invalid or expired state parameter' });
+    if (!validateRequired(code)) return res.status(400).json({ error: 'Authorization code is required' });
+
+    // Exchange code for tokens (in production, call Google token endpoint)
+    // This is a placeholder - real implementation would call Google's token endpoint
+    const profile = { id: `google_${Math.random()}`, email: 'user@example.com', name: 'User Name', provider: 'google' };
+
+    const existingOAuthAccount = await pool.query('SELECT user_id FROM oauth_accounts WHERE provider = $1 AND provider_id = $2', ['google', profile.id]);
+    let userId;
+    if (existingOAuthAccount.rows.length > 0) {
+      userId = existingOAuthAccount.rows[0].user_id;
+    } else {
+      const user = await getUserByEmail(profile.email, tenantId);
+      if (user) { userId = user.id; }
+      else {
+        const roleResult = await pool.query('SELECT id FROM roles WHERE tenant_id = $1 AND name = $2', [tenantId, 'User']);
+        const newUser = await createUser(tenantId, profile.email, null, roleResult.rows[0].id);
+        userId = newUser.id;
+        await updateUserEmailVerified(userId, tenantId);
+      }
+      await pool.query('INSERT INTO oauth_accounts (id, user_id, provider, provider_id) VALUES ($1,$2,$3,$4)', [uuidv4(), userId, 'google', profile.id]);
+    }
+    const user = await getUserById(userId, tenantId);
+    const roleResult = await pool.query('SELECT name FROM roles WHERE id = $1', [user.role_id]);
+    const roleName = roleResult.rows[0]?.name || 'User';
+    const payload = { userId, tenantId, email: user.email, role: roleName };
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+    res.json({ accessToken, refreshToken, user: { id: userId, email: user.email, role: roleName } });
+  } catch (error) {
+    res.status(500).json({ error: 'OAuth login failed' });
+  }
+});
+// NOTE: identical placeholder handlers exist for POST /oauth/facebook/callback and POST /oauth/instagram/callback.
+
+// Google Sign-In via verified ID token — the path the clients actually use.
+router.post('/oauth/google/idtoken', async (req, res) => {
+  const { idToken, tenantId } = req.body;
+  const ticket = await googleVerifierClient.verifyIdToken({ idToken, audience: googleAllowedAudiences() });
+  const payload = ticket.getPayload();
+  const email = payload.email;
+  let user = await getUserByEmail(email, tenantId);
+  if (!user) {
+    // auto-create a pending user for ANY Google email, then require admin approval
+    const roleResult = await pool.query('SELECT id FROM roles WHERE tenant_id=$1 AND name=$2', [tenantId, 'User']);
+    user = await createUser(tenantId, email, null, roleResult.rows[0].id, 'pending');
+    return res.status(403).json({ error: 'awaiting admin approval' });
+  }
+  if (user.status !== 'active') return res.status(403).json({ error: 'awaiting admin approval' });
+  // ... issue tokens ...
+});
+
+--- src/routes/marketplace.ts (excerpt) ---
+
+router.post('/webhook', async (req, res) => {   // partner marketplace posts confirmed orders here; it credits referral rewards
+  try {
+    if (!req.body.tenant_id || typeof req.body.tenant_id !== 'string') return res.status(400).json({ error: 'tenant_id is required' });
+    if (!req.body.referral_code || typeof req.body.referral_code !== 'string') return res.status(400).json({ error: 'referral_code is required' });
+    if (!Number.isFinite(Number(req.body.order_value)) || Number(req.body.order_value) <= 0) return res.status(400).json({ error: 'order_value must be a positive number' });
+    const confirmation = await confirmMarketplaceOrder(req.body.tenant_id, { referral_code: req.body.referral_code, order_value: Number(req.body.order_value), external_order_id: req.body.external_order_id });
+    if (!confirmation) return res.status(404).json({ error: 'Referral not found' });
+    res.json({ message: 'Marketplace order confirmed', confirmation });
+  } catch (error) { res.status(500).json({ error: 'Failed to confirm order' }); }
+});
+
+--- src/routes/saas.ts (excerpt) ---
+
+router.post('/tenants', async (req, res) => {    // self-serve tenant provisioning; NOTE: no authMiddleware on this route
+  try {
+    const { tenantName, adminEmail, adminPassword } = req.body;
+    // ...validate name/email...
+    if (adminPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    const tenant = await saasService.createTenant({ tenantName, adminEmail, adminPassword });  // creates a Super Admin for the new tenant
+    res.status(201).json(tenant);
+  } catch (error) { res.status(500).json({ error: 'Failed to create tenant' }); }
+});

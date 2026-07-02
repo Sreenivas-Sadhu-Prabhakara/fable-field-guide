@@ -207,9 +207,11 @@ a.link:hover{border-color:var(--sonnet-ink)}
 .route-card .why{font-size:13.5px;color:var(--muted);margin-top:13px;line-height:1.5}
 .route-card.s{border-color:rgba(47,157,255,.32)}.route-card.s .model{color:var(--sonnet-ink)}
 .route-card.o{border-color:rgba(255,171,46,.3)}.route-card.o .model{color:var(--opus-ink)}
+.route-card.f{border-color:rgba(138,107,255,.32)}.route-card.f .model{color:#c3aaff}
 .route-card::after{content:"";position:absolute;left:0;top:20px;bottom:20px;width:2px;border-radius:0 2px 2px 0;background:var(--line-2)}
 .route-card.s::after{background:linear-gradient(180deg,var(--sonnet),var(--sonnet-2))}
 .route-card.o::after{background:linear-gradient(180deg,var(--opus),var(--opus-2))}
+.route-card.f::after{background:linear-gradient(180deg,#8a6bff,#b98bff)}
 .route-card.grad::after{background:linear-gradient(180deg,var(--sonnet),var(--opus))}
 
 .labgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-top:22px}

@@ -1,0 +1,202 @@
+{
+  "id": "fable5-vs-opus48-burnzone",
+  "title": "Fable 5 vs Opus 4.8 \u2014 building BurnZone via Kriya",
+  "date": "2026-07-02",
+  "effort": "default (Claude Code default, held equal on both arms)",
+  "arms": {
+    "opus48": "claude-opus-4-8",
+    "fable5": "claude-fable-5"
+  },
+  "verified_via": "claude-code modelUsage billing telemetry",
+  "pricing_note": "Opus 4.8 $5/$25 per MTok; Fable 5 $10/$50 per MTok (2x Opus per-token, no intro discount). Costs normalized to official published rates from Claude Code modelUsage telemetry.",
+  "headline": "On four real Kriya-role tasks over the production BurnZone brownfield, Fable 5 and Opus 4.8 caught the same seeded-critical defects; Fable found more of the deeper/unseeded ones but cost ~2.6-3x per task at matched effort.",
+  "tasks": [
+    {
+      "id": "A",
+      "name": "Security capture (brownfield)",
+      "type": "objective (5 seeded-real defects, 2 CRITICAL)",
+      "opus48": {
+        "requested_model": "claude-opus-4-8",
+        "served_model": "claude-opus-4-8",
+        "verified": true,
+        "input_tokens": 2738,
+        "output_tokens": 10518,
+        "cache_read_tokens": 14839,
+        "cache_create_tokens": 4958,
+        "duration_s": 132.8,
+        "cost_usd_std": 0.315,
+        "cost_usd_intro": null,
+        "score": {
+          "served": "claude-opus-4-8",
+          "seeded_caught": "2/2",
+          "defects": 8,
+          "false_positives": 0,
+          "verdict": "NEEDS-FIX",
+          "note": "All 5 keyed defects + 3 valid bonus (webhook replay/idempotency, branch-scoped role IDOR, tenant-provisioning response leak+rate-limit). Found the deeper email_verified bypass on the idtoken path beyond the keyed no-allowlist. Zero FPs; self-corrected its own severity note (email not attacker-selectable)."
+        }
+      },
+      "fable5": {
+        "requested_model": "claude-fable-5",
+        "served_model": "claude-opus-4-8",
+        "verified": false,
+        "input_tokens": 3460,
+        "output_tokens": 11658,
+        "cache_read_tokens": 173010,
+        "cache_create_tokens": 12504,
+        "duration_s": 394.3,
+        "cost_usd_std": 0.4734,
+        "cost_usd_intro": null,
+        "score": {
+          "served": "claude-opus-4-8 (FALLBACK \u2014 not Fable)",
+          "seeded_caught": "2/2",
+          "defects": 10,
+          "false_positives": 0,
+          "verdict": "NEEDS-FIX",
+          "note": "Fable declined the cyber content; request transparently re-served by Opus 4.8. Output is an Opus sample: 10 findings (3 CRIT/1 HIGH/3 MED/3 LOW), all 5 keyed + bonuses, no FPs. Cost $0.47 / 394s vs direct-Opus $0.315 / 133s \u2014 fallback carried a cost + latency premium. NOT a Fable measurement."
+        }
+      }
+    },
+    {
+      "id": "B",
+      "name": "Producer-code \u2014 booking-display divergence",
+      "type": "objective (root cause + minimal fix)",
+      "opus48": {
+        "requested_model": "claude-opus-4-8",
+        "served_model": "claude-opus-4-8",
+        "verified": true,
+        "input_tokens": 3579,
+        "output_tokens": 6345,
+        "cache_read_tokens": 57802,
+        "cache_create_tokens": 6208,
+        "duration_s": 96.1,
+        "cost_usd_std": 0.2442,
+        "cost_usd_intro": null,
+        "score": {
+          "served": "claude-opus-4-8",
+          "root_cause": "correct",
+          "fix_correct": "yes",
+          "invariants_preserved": "4/4",
+          "verdict": "CORRECT",
+          "note": "SELECT * omits cross-table fields; Dart silently nulls missing keys -> blank cards. LEFT JOIN with exact aliases; kept tenant+per-user scoping, LEFT for nullables, COUNT on base table. Bonus: flagged SELECT b.* id-collision, added per-join tenant_id predicate (defense-in-depth), timestamptz caveat, contract-test recommendation. 6345 out tok / 96.1s."
+        }
+      },
+      "fable5": {
+        "requested_model": "claude-fable-5",
+        "served_model": "claude-fable-5",
+        "verified": true,
+        "input_tokens": 3460,
+        "output_tokens": 4070,
+        "cache_read_tokens": 132416,
+        "cache_create_tokens": 10674,
+        "duration_s": 76.9,
+        "cost_usd_std": 0.5039,
+        "cost_usd_intro": null,
+        "score": {
+          "served": "claude-fable-5",
+          "root_cause": "correct",
+          "fix_correct": "yes",
+          "invariants_preserved": "4/4",
+          "verdict": "CORRECT",
+          "note": "Same correct diagnosis + LEFT JOIN fix (matched the real commit's SELECT b.* form). Same 4 invariants, same b.* collision insight, same per-join tenant predicate, same contract-test recommendation. Tighter: 4070 out tok / 76.9s (0.64x Opus tokens, faster)."
+        }
+      }
+    },
+    {
+      "id": "C",
+      "name": "Architect \u2014 Stage-0 strangler plan",
+      "type": "rubric (16 items)",
+      "opus48": {
+        "requested_model": "claude-opus-4-8",
+        "served_model": "claude-opus-4-8",
+        "verified": true,
+        "input_tokens": 2738,
+        "output_tokens": 11466,
+        "cache_read_tokens": 16873,
+        "cache_create_tokens": 1068,
+        "duration_s": 171.7,
+        "cost_usd_std": 0.3155,
+        "cost_usd_intro": null,
+        "score": {
+          "served": "claude-opus-4-8",
+          "rubric": "16/16",
+          "note": "TIE. Emphasis on instrumentation breadth: explicit artifact set, first-match-wins triage (QUARANTINE as rule 0), two-key SoD (bot can't self-approve), ~10 named fitness functions incl. bespoke token-mint-guard, drift-sweep erosion guard, fail-closed-rollback (flag OFF -> 503, never reopen the hole), 6 human gates. Also caught the compromised-trust-boundary key rotation (in the secret-hygiene NFR). 11466 out tok / 171.7s."
+        }
+      },
+      "fable5": {
+        "requested_model": "claude-fable-5",
+        "served_model": "claude-fable-5",
+        "verified": true,
+        "input_tokens": 2738,
+        "output_tokens": 10689,
+        "cache_read_tokens": 18176,
+        "cache_create_tokens": 1068,
+        "duration_s": 156.6,
+        "cost_usd_std": 0.5934,
+        "cost_usd_intro": null,
+        "score": {
+          "served": "claude-fable-5",
+          "rubric": "16/16",
+          "note": "TIE. Same ceiling score, same lone minor miss (no-500 invariant only implicit). Emphasis on operational-security depth: made the already-minted-JWT problem a Day-0 dual-key rotation + role-escalation DB audit query; 14-day allowlist shadow-mode before enforce; block-all-then-triage-to-re-enable (fail-closed); pr-size-cap + adversarial-reviewer-before-gate. Both arms independently caught the key-rotation insight; differences are which optional bonuses each emphasized, not score. 10689 out tok / 156.6s (slightly terser + faster than Opus)."
+        }
+      }
+    },
+    {
+      "id": "D",
+      "name": "Gate-verifier (planted fail-open)",
+      "type": "objective (planted current-role bug)",
+      "opus48": {
+        "requested_model": "claude-opus-4-8",
+        "served_model": "claude-opus-4-8",
+        "verified": true,
+        "input_tokens": 2738,
+        "output_tokens": 7422,
+        "cache_read_tokens": 16873,
+        "cache_create_tokens": 1179,
+        "duration_s": 87.2,
+        "cost_usd_std": 0.215,
+        "cost_usd_intro": null,
+        "score": {
+          "served": "claude-opus-4-8",
+          "caught_planted": true,
+          "verdict": "VETO",
+          "findings": 4,
+          "note": "Correct VETO. Caught the planted bug (guard checks only the NEW role -> Branch Admin demotes/strips a Super Admin = takeover/lockout), ranked CRITICAL. Went beyond even the real commit: flagged that classifying elevation from the attacker-controlled request string (which the real fix also does) is collation/normalization-bypassable, + per-tenant custom-role gap + last-Super-Admin lockout. Corrected code with is_admin flag."
+        }
+      },
+      "fable5": {
+        "requested_model": "claude-fable-5",
+        "served_model": "claude-opus-4-8",
+        "verified": false,
+        "input_tokens": 2738,
+        "output_tokens": 8318,
+        "cache_read_tokens": 19355,
+        "cache_create_tokens": 0,
+        "duration_s": 103.1,
+        "cost_usd_std": 0.2313,
+        "cost_usd_intro": null,
+        "score": {
+          "served": "claude-opus-4-8 (FALLBACK \u2014 not Fable)",
+          "caught_planted": true,
+          "verdict": "VETO",
+          "findings": 4,
+          "note": "Fable declined; re-served by Opus 4.8. Output near-identical to direct Opus: VETO, caught planted current-role hole + the request-string-classification bypass + custom-role gap + audit gap. Confirms the fallback is transparent and produces correct output. NOT a Fable measurement."
+        }
+      }
+    }
+  ],
+  "totals": {
+    "opus48": {
+      "out": 35751,
+      "dur_s": 487.8,
+      "cost_std": 1.0897,
+      "cost_intro": 0.0
+    },
+    "fable5": {
+      "out": 34735,
+      "dur_s": 730.9,
+      "cost_std": 1.802,
+      "cost_intro": 0.0
+    }
+  },
+  "all_models_verified": false
+}

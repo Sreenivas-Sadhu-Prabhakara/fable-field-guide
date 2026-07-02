@@ -27,9 +27,9 @@
 
     <!-- hero telemetry strip -->
     <div class="rev d3" style="display:flex;gap:clamp(24px,5vw,64px);flex-wrap:wrap;margin-top:38px">
-      <div><div class="stat" style="font-size:clamp(30px,4.4vw,52px)"><span data-count="12">0</span></div><div class="mono" style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-top:6px">model runs</div></div>
-      <div><div class="stat" style="font-size:clamp(30px,4.4vw,52px)"><span data-count="2">0</span></div><div class="mono" style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-top:6px">models</div></div>
-      <div><div class="stat" style="font-size:clamp(30px,4.4vw,52px)">$<span data-count="3.06" data-dec="2">0</span></div><div class="mono" style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-top:6px">total cost</div></div>
+      <div><div class="stat" style="font-size:clamp(30px,4.4vw,52px)"><span data-count="20">0</span></div><div class="mono" style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-top:6px">model runs</div></div>
+      <div><div class="stat" style="font-size:clamp(30px,4.4vw,52px)"><span data-count="3">0</span></div><div class="mono" style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-top:6px">models</div></div>
+      <div><div class="stat" style="font-size:clamp(30px,4.4vw,52px)">$<span data-count="5.95" data-dec="2">0</span></div><div class="mono" style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-top:6px">total cost</div></div>
       <div><div class="stat grad" style="font-size:clamp(30px,4.4vw,52px)"><span data-count="0">0</span></div><div class="mono" style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-top:6px">fabricated numbers</div></div>
     </div>
 
@@ -66,7 +66,7 @@
 </div>
 
 <script>
-const cardClass = m => /ensemble/i.test(m) ? 'grad' : /opus/i.test(m) ? 'o' : /sonnet/i.test(m) ? 's' : '';
+const cardClass = m => /ensemble/i.test(m) ? 'grad' : /opus/i.test(m) ? 'o' : /fable|mythos/i.test(m) ? 'f' : /sonnet/i.test(m) ? 's' : '';
 const fmtRole = r => r.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
 
 /* count-up on scroll */
@@ -122,7 +122,8 @@ async function load(){
     ].join('');
     const chips = (it.models||[]).map(m=>`<span class="mchip">${m}</span>`).join('');
     const label = it.subtitle ? `${it.title} <span style="color:var(--muted);font-weight:500">· ${it.subtitle}</span>` : it.title;
-    return `<a class="labcard" href="${it.path}" ${it.results?`data-results="${it.results}"`:''}>
+    const stats = it.card_stats ? JSON.stringify(it.card_stats) : '';
+    return `<a class="labcard" href="${it.path}" ${it.results?`data-results="${it.results}"`:''} ${stats?`data-stats='${stats.replace(/'/g,"&#39;")}'`:''}>
       <div class="top">
         <div class="badges">${badges}</div>
         <h3>${label}</h3>
@@ -134,19 +135,31 @@ async function load(){
     </a>`;
   }).join('');
 
-  // enrich lab cards with real headline stats from each results.json
-  for(const card of grid.querySelectorAll('.labcard[data-results]')){
-    try{
-      const r = await (await fetch(card.dataset.results,{cache:'no-store'})).json();
-      const t = r.totals || {}; const o=t.opus48||{}, s=t.sonnet5||{};
-      const verbosity = (s.out&&o.out) ? (s.out/o.out) : null;
-      const cheaper = (o.cost_std&&s.cost_std) ? (100*(o.cost_std-s.cost_std)/o.cost_std) : null;
-      const el = card.querySelector('.lab-stats');
-      const parts=[];
-      if(verbosity) parts.push(`<div class="s"><div class="n">${verbosity.toFixed(2)}×</div><div class="k">Sonnet verbosity</div></div>`);
-      if(cheaper!==null) parts.push(`<div class="s"><div class="n">${cheaper>=0?cheaper.toFixed(0)+'%':'+'+Math.abs(cheaper).toFixed(0)+'%'}</div><div class="k">${cheaper>=0?'Sonnet cheaper (std)':'Sonnet dearer'}</div></div>`);
-      if(parts.length){el.className='stats';el.innerHTML=parts.join('');}
-    }catch(e){/* leave card without stats */}
+  // enrich lab cards with headline stats. Prefer an explicit per-lab card_stats
+  // (honest, author-curated); otherwise auto-derive generically from results.json
+  // totals: opus is the baseline, the other arm is the challenger.
+  const shortName = id => (id.match(/fable|mythos|opus|sonnet|haiku/i)||[''])[0].replace(/^\w/,c=>c.toUpperCase()) || id;
+  for(const card of grid.querySelectorAll('.labcard')){
+    const el = card.querySelector('.lab-stats');
+    let parts=[];
+    if(card.dataset.stats){
+      try{ parts = JSON.parse(card.dataset.stats).map(s=>`<div class="s"><div class="n">${s.n}</div><div class="k">${s.k}</div></div>`); }catch(e){}
+    } else if(card.dataset.results){
+      try{
+        const r = await (await fetch(card.dataset.results,{cache:'no-store'})).json();
+        const t = r.totals||{}, arms=r.arms||{};
+        const keys = Object.keys(t);
+        const base = keys.find(k=>/opus/i.test(arms[k]||k)) || keys[0];
+        const chal = keys.find(k=>k!==base);
+        if(base&&chal){
+          const b=t[base]||{}, c=t[chal]||{}, name=shortName(arms[chal]||chal);
+          if(c.out&&b.out) parts.push(`<div class="s"><div class="n">${(c.out/b.out).toFixed(2)}×</div><div class="k">${name} tokens vs Opus</div></div>`);
+          if(b.cost_std&&c.cost_std){ const d=100*(c.cost_std-b.cost_std)/b.cost_std;
+            parts.push(`<div class="s"><div class="n">${d>=0?'+'+d.toFixed(0):d.toFixed(0)}%</div><div class="k">${name} ${d>=0?'dearer':'cheaper'} (std)</div></div>`); }
+        }
+      }catch(e){/* leave card without stats */}
+    }
+    if(parts.length){el.className='stats';el.innerHTML=parts.join('');}
   }
 }
 load();

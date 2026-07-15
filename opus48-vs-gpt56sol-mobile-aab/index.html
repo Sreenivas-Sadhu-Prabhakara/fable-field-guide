@@ -30,6 +30,14 @@
   .result-facts li span:last-child{text-align:right;font-weight:650}
   .result-note{margin-top:18px;color:var(--muted);font-size:14px;line-height:1.55;max-width:920px}
   @media(max-width:720px){.result-grid{grid-template-columns:1fr}.result-score{font-size:58px}.result-facts li{align-items:flex-start}}
+  /* This page is a single scrolling document, not a .slide deck. Shared deck.js only
+     reveals .rev elements inside an observed .slide (threshold 0.55); this page has no
+     .slide wrappers, so nothing was ever revealed and it rendered blank. Reveal all
+     content unconditionally here — robust to JS-off and any viewport size. */
+  .rev{opacity:1;transform:none;animation:labReveal .6s var(--ease) both}
+  .rev.d2{animation-delay:.08s}.rev.d3{animation-delay:.16s}.rev.d4{animation-delay:.24s}
+  @keyframes labReveal{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){.rev{animation:none}}
 </style>
 </head>
 <body>

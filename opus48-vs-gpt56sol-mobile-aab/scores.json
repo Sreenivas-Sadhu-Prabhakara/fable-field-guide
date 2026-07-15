@@ -1,0 +1,63 @@
+{
+  "note": "Preliminary objective audit of the completed Opus-side app artifact against RUBRIC.md. GPT 5.6 Sol remains unrun and has no score.",
+  "opus48": {
+    "total": 91,
+    "max": 100,
+    "status": "artifact_complete_preliminary_audit",
+    "sections": [
+      {
+        "n": 1,
+        "name": "Ships a deployable artifact",
+        "awarded": 25,
+        "max": 25,
+        "evidence": "app-release.aab exists; jarsigner -verify reports jar verified; unzip shows BundleConfig.pb, dex, manifest, and arm64-v8a/armeabi-v7a/x86_64 libapp.so."
+      },
+      {
+        "n": 2,
+        "name": "Spec coverage",
+        "awarded": 20,
+        "max": 20,
+        "evidence": "Ratio calculator, staged timer with controls and haptics, persistent add/edit/delete brew log, settings, and local-only privacy statement are implemented."
+      },
+      {
+        "n": 3,
+        "name": "Correctness",
+        "awarded": 13,
+        "max": 15,
+        "evidence": "Ratio math and persistence round-trip are unit-tested; widget smoke test starts timer. Direct stage-advance unit coverage is still a gap."
+      },
+      {
+        "n": 4,
+        "name": "Code quality",
+        "awarded": 12,
+        "max": 15,
+        "evidence": "flutter analyze is clean; implementation is compact and dependency-light, but most app code currently lives in one Dart file rather than a multi-file screen/service split."
+      },
+      {
+        "n": 5,
+        "name": "Offline-first and privacy",
+        "awarded": 10,
+        "max": 10,
+        "evidence": "No app manifest permissions; data stored via SharedPreferences; no backend, account, analytics, or network SDK."
+      },
+      {
+        "n": 6,
+        "name": "UX and polish",
+        "awarded": 7,
+        "max": 10,
+        "evidence": "Coherent Material 3 theme, empty state, and clear controls. Input validation and accessibility polish can be stronger."
+      },
+      {
+        "n": 7,
+        "name": "Production readiness",
+        "awarded": 4,
+        "max": 5,
+        "evidence": "Version and launcher label set; release signing externalized and git-ignored. Production upload-key policy remains a human decision."
+      }
+    ]
+  },
+  "gpt56sol": {
+    "status": "not run in verified local evidence",
+    "total": null
+  }
+}

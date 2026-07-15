@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Opus 4.8 vs GPT 5.6 Sol - Mobile AAB Lab</title>
+<meta name="description" content="A Kriya lab slot for comparing Opus 4.8 and GPT 5.6 Sol on an end-to-end Flutter Android App Bundle build. Opus artifact complete; GPT run pending." />
+<link rel="stylesheet" href="../shared/keynote.css" />
+<style>
+  .lab-wrap{max-width:1120px;margin:0 auto;padding:96px 22px 56px}
+  .lab-hero{min-height:auto;padding:44px 0 22px}
+  .evidence{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:26px}
+  .evidence .panel{min-height:150px}
+  .callout{border:1px solid rgba(255,159,10,.35);background:rgba(255,159,10,.1);border-radius:8px;padding:16px;margin-top:22px}
+  .mono-small{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;overflow-wrap:anywhere}
+  .plain-table{width:100%;border-collapse:collapse;margin-top:14px}
+  .plain-table th,.plain-table td{padding:12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  .ok{color:#5be584;font-weight:800}
+  .pending{color:#ffce6a;font-weight:800}
+</style>
+</head>
+<body>
+<a class="backlink" href="../">← all labs</a>
+<main class="lab-wrap">
+  <section class="lab-hero">
+    <div class="kicker rev"><span class="dot"></span> A Kriya lab slot · 15 July 2026</div>
+    <h1 class="rev d1">Opus 4.8 <span style="color:var(--muted2);font-weight:600">vs</span><br><span class="grad">GPT 5.6 Sol</span></h1>
+    <p class="lede rev d2" style="margin-top:24px">Task: build a polished offline-first Flutter app for filter coffee and deliver a signed release Android App Bundle ready for Play upload review.</p>
+    <div class="callout rev d3">
+      <strong>Status:</strong> the Opus-side AAB is complete and locally verified. This page still does not claim GPT 5.6 Sol comparative performance, cost, or quality numbers because that exact run is pending.
+    </div>
+  </section>
+
+  <section class="panel rev">
+    <h2>Opus Artifact</h2>
+    <p class="body">The app is <strong>Giri Brew Companion</strong>: ratio calculator, staged timer, persistent brew log, settings, local-only storage, and no Android permissions declared by the app manifest.</p>
+    <div class="evidence">
+      <div class="panel">
+        <h3>Bundle</h3>
+        <p class="stat" style="font-size:34px">40M</p>
+        <p class="mono-small">filter_brew_companion/build/app/outputs/bundle/release/app-release.aab</p>
+      </div>
+      <div class="panel">
+        <h3>Signature</h3>
+        <p class="ok">jar verified</p>
+        <p class="body">Self-signed upload key, git-ignored.</p>
+      </div>
+      <div class="panel">
+        <h3>SHA-256</h3>
+        <p class="mono-small">ef24a591892bc10a0ced0c6bebfb39d1d16a5e7ff06848d1c0698fef9d1c8dfe</p>
+      </div>
+      <div class="panel">
+        <h3>Quality Gates</h3>
+        <p class="ok">flutter analyze: clean</p>
+        <p class="ok">flutter test: 3 passed</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel rev" style="margin-top:18px">
+    <h2>Comparison Status</h2>
+    <table class="plain-table">
+      <thead><tr><th>Arm</th><th>Status</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="mono-small">gpt-5.6-sol</td>
+          <td class="pending">pending verified run</td>
+          <td>Local Codex-built artifact exists, but this repo does not claim it as GPT 5.6 Sol telemetry.</td>
+        </tr>
+        <tr>
+          <td class="mono-small">claude-opus-4-8</td>
+          <td class="ok">artifact complete</td>
+          <td>Signed AAB verified locally: hash recorded, <code>jarsigner</code> reports <code>jar verified</code>, and required bundle entries/ABIs are present.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel rev" style="margin-top:18px">
+    <h2>Objective Checks Captured</h2>
+    <table class="plain-table">
+      <tbody>
+        <tr><th>Signed AAB</th><td class="ok">present and verified</td></tr>
+        <tr><th>Bundle contents</th><td>BundleConfig.pb, classes.dex, manifest, arm64-v8a, armeabi-v7a, x86_64</td></tr>
+        <tr><th>Offline posture</th><td>No app manifest <code>uses-permission</code> entries; storage via SharedPreferences.</td></tr>
+        <tr><th>Opus preliminary artifact audit</th><td>91 / 100. GPT 5.6 Sol remains unrun, so this is not a final head-to-head result.</td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+</body>
+</html>

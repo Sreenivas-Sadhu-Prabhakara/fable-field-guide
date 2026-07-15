@@ -27,3 +27,11 @@ Thumbs.db
 harness/out/
 # Author grading reference — keep local to avoid contaminating re-runs
 harness/suites/**/ANSWER-KEYS.md
+
+# Android release signing material — NEVER commit (defense in depth)
+**/android/key.properties
+**/android/app/*.jks
+**/android/app/*.keystore
+
+# Lab-local app builds live in their own repo, not in the hub (hub keeps distilled results)
+opus48-vs-gpt56sol-mobile-aab/filter_brew_companion/

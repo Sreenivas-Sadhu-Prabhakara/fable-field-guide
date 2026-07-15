@@ -1,0 +1,64 @@
+{
+  "id": "opus48-vs-gpt56sol-mobile-aab",
+  "title": "Opus 4.8 vs GPT 5.6 Sol - Mobile AAB",
+  "date": "2026-07-15",
+  "status": "opus_artifact_complete_gpt_pending",
+  "app": {
+    "name": "Giri Brew Companion",
+    "brief": "Filter Coffee Brew Companion",
+    "framework": "Flutter",
+    "project_path": "opus48-vs-gpt56sol-mobile-aab/filter_brew_companion",
+    "features": [
+      "two-way ratio calculator with strength and cup helper",
+      "guided staged brew timer with start, pause, skip, reset, and haptics",
+      "persistent brew log with add, edit, delete, ratings, tags, and notes",
+      "settings for default method, strength, cup size, theme, and clear-all-data",
+      "offline-only privacy statement"
+    ]
+  },
+  "artifact": {
+    "type": "android_app_bundle",
+    "path": "opus48-vs-gpt56sol-mobile-aab/filter_brew_companion/build/app/outputs/bundle/release/app-release.aab",
+    "size": "40M",
+    "sha256": "ef24a591892bc10a0ced0c6bebfb39d1d16a5e7ff06848d1c0698fef9d1c8dfe",
+    "signed": true,
+    "signer": "CN=Giri Coffee Works, OU=Kriya Lab, O=Giri Coffee Works, L=Bengaluru, ST=Karnataka, C=IN",
+    "signer_sha256": "81:DD:13:10:E5:82:31:5F:5D:89:2A:6A:25:24:41:D2:12:00:95:38:13:ED:1C:80:26:95:85:90:D0:0E:AC:63",
+    "jarsigner": "jar verified",
+    "abis": ["arm64-v8a", "armeabi-v7a", "x86_64"],
+    "bundle_entries_verified": [
+      "BundleConfig.pb",
+      "base/dex/classes.dex",
+      "base/lib/arm64-v8a/libapp.so",
+      "base/lib/armeabi-v7a/libapp.so",
+      "base/lib/x86_64/libapp.so",
+      "base/manifest/AndroidManifest.xml"
+    ]
+  },
+  "quality_gates": {
+    "flutter_analyze": "No issues found",
+    "flutter_test": "3 tests passed",
+    "permissions_scan": "no uses-permission entries in android/app/src/main"
+  },
+  "arms": {
+    "gpt56sol": {
+      "requested_model": "gpt-5.6-sol",
+      "served_model": "not telemetry-verified in this environment",
+      "status": "pending_verified_run",
+      "artifact_note": "A local Codex-built artifact exists, but it is not claimed as GPT 5.6 Sol telemetry."
+    },
+    "opus48": {
+      "requested_model": "claude-opus-4-8",
+      "served_model": "claude-opus-4-8",
+      "status": "artifact_complete",
+      "artifact_note": "Opus-side AAB is complete and locally verified: file exists, SHA-256 recorded, jarsigner reports jar verified, and expected bundle entries/ABIs are present.",
+      "grade": {
+        "total": 91,
+        "max": 100,
+        "status": "preliminary_artifact_audit"
+      }
+    }
+  },
+  "all_models_verified": false,
+  "fabricated_numbers": 0
+}
